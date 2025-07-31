@@ -1,12 +1,8 @@
 // src/types.ts
 
-import {
-	Json,
-} from '@cloudflare/itty-router-openapi';
-
 // --- Tipos para a Rota de Geração ---
 
-export class GenerateVideo extends Json {
+export class GenerateVideo {
 	// O roteador espera um corpo JSON, mas não validaremos a estrutura
 	// interna por enquanto, aceitando qualquer objeto.
 	constructor() {
@@ -14,7 +10,7 @@ export class GenerateVideo extends Json {
 	}
 }
 
-export class GenerateVideoResponse extends Json {
+export class GenerateVideoResponse {
 	// Define a estrutura da resposta que enviamos de volta.
 	name: string;
 	metadata: object;
@@ -28,7 +24,7 @@ export class GenerateVideoResponse extends Json {
 
 // --- Tipos para a Rota de Verificação de Status ---
 
-export class CheckStatus extends Json {
+export class CheckStatus {
 	// Parâmetros da URL
 	operationName: string;
 
@@ -38,7 +34,7 @@ export class CheckStatus extends Json {
 	}
 }
 
-export class CheckStatusResponse extends Json {
+export class CheckStatusResponse {
 	// Define a estrutura da resposta de status.
 	done: boolean;
 	response?: object;
@@ -53,7 +49,7 @@ export class CheckStatusResponse extends Json {
 }
 
 // --- Tipo de Erro Genérico ---
-export class ErrorResponse extends Json {
+export class ErrorResponse {
 	error: string;
 	status: number;
 

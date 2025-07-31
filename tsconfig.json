@@ -14,6 +14,7 @@
 		"strictNullChecks": false,
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
+		"forceConsistentCasingInFileNames": true,
 		/* If NOT transpiling with TypeScript: */
 		"moduleResolution": "Bundler",
 		"module": "es2022",

@@ -24,7 +24,10 @@ async function getGoogleAuth(env: any) {
     scope: 'https://www.googleapis.com/auth/cloud-platform',
   };
   const jwt = await gerarJWTGoogle(serviceAccount);
-  const tokenData: { access_token: string } = await obterAccessToken(jwt);
+  const tokenData = await obterAccessToken(jwt) as { access_token: string };
+  if (!tokenData || typeof tokenData.access_token !== 'string') {
+	throw new Error('Failed to obtain access_token from Google authentication.');
+  }
   const accessToken = tokenData.access_token;
   const projectId = 'gen-lang-client-0780586577';
   return { accessToken, projectId };

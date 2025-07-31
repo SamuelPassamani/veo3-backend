@@ -1,7 +1,6 @@
 // src/endpoints/video.ts
 
 import { OpenAPIRouter } from '@cloudflare/itty-router-openapi';
-import { GoogleAuth } from 'google-auth-library';
 import {
 	GenerateVideo,
 	CheckStatus,

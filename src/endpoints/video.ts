@@ -33,6 +33,13 @@ async function getGoogleAuth(env: any) {
   return { accessToken, projectId };
 }
 
+function withCORS(response: Response) {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  return response;
+}
+
 // --- ROTA PARA INICIAR A GERAÇÃO DE VÍDEO ---
 // A URL final será /api/video/generate
 videoRoutes.post('/generate', GenerateVideo, async (request, env) => {
@@ -61,9 +68,9 @@ videoRoutes.post('/generate', GenerateVideo, async (request, env) => {
 	}
 
 	const operation = await gcpResponse.json();
-	return new Response(JSON.stringify(new GenerateVideoResponse(operation)), {
+	return withCORS(new Response(JSON.stringify(new GenerateVideoResponse(operation)), {
 		headers: { 'Access-Control-Allow-Origin': '*' }
-	});
+	}));
 });
 
 // --- ROTA PARA VERIFICAR O STATUS DA GERAÇÃO ---
@@ -94,7 +101,12 @@ videoRoutes.get('/status/:operationName+', CheckStatus, async (request, env) => 
 	}
 
 	const statusData = await statusResponse.json();
-	return new Response(JSON.stringify(new CheckStatusResponse(statusData)), {
+	return withCORS(new Response(JSON.stringify(new CheckStatusResponse(statusData)), {
 		headers: { 'Access-Control-Allow-Origin': '*' }
-	});
+	}));
 });
+
+// Handler para OPTIONS (pré-flight)
+videoRoutes.options('/*', () =>
+  withCORS(new Response(null, { status: 204 }))
+);

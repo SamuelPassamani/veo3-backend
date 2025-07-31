@@ -9,7 +9,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@cloudflare/itty-router-openapi": "^1.2.0",
+    "@cloudflare/itty-router-openapi": "^1.1.1",
     "google-auth-library": "^10.2.0"
   },
   "devDependencies": {

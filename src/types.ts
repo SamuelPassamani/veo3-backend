@@ -5,9 +5,7 @@
 export class GenerateVideo {
 	// O roteador espera um corpo JSON, mas não validaremos a estrutura
 	// interna por enquanto, aceitando qualquer objeto.
-	constructor() {
-		super();
-	}
+	constructor() {}
 }
 
 export class GenerateVideoResponse {
@@ -16,7 +14,6 @@ export class GenerateVideoResponse {
 	metadata: object;
 
 	constructor(data: any) {
-		super(data);
 		this.name = data.name;
 		this.metadata = data.metadata;
 	}
@@ -29,7 +26,6 @@ export class CheckStatus {
 	operationName: string;
 
 	constructor(data: any) {
-		super(data);
 		this.operationName = data.operationName;
 	}
 }
@@ -41,7 +37,6 @@ export class CheckStatusResponse {
 	error?: object;
 
 	constructor(data: any) {
-		super(data);
 		this.done = data.done;
 		this.response = data.response;
 		this.error = data.error;
@@ -54,7 +49,6 @@ export class ErrorResponse {
 	status: number;
 
 	constructor(message: string, status: number = 500) {
-		super({ error: message, status });
 		this.error = message;
 		this.status = status;
 	}

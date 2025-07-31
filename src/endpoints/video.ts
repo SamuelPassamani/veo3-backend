@@ -54,11 +54,16 @@ videoRoutes.post('/generate', GenerateVideo, async (request, env) => {
 	if (!gcpResponse.ok) {
 		const errorBody = await gcpResponse.text();
 		console.error('Google API Error:', errorBody);
-		return new Response(JSON.stringify({ error: `Google API Error: ${gcpResponse.status}` }), { status: 500 });
+		return new Response(JSON.stringify({ error: `Google API Error: ${gcpResponse.status}` }), {
+			status: 500,
+			headers: { 'Access-Control-Allow-Origin': '*' }
+		});
 	}
 
 	const operation = await gcpResponse.json();
-	return new GenerateVideoResponse(operation);
+	return new Response(JSON.stringify(new GenerateVideoResponse(operation)), {
+		headers: { 'Access-Control-Allow-Origin': '*' }
+	});
 });
 
 // --- ROTA PARA VERIFICAR O STATUS DA GERAÇÃO ---
@@ -82,9 +87,14 @@ videoRoutes.get('/status/:operationName+', CheckStatus, async (request, env) => 
 	if (!statusResponse.ok) {
 		const errorBody = await statusResponse.text();
 		console.error('Google API Status Check Error:', errorBody);
-		return new ErrorResponse(`Google API Status Check Error: ${statusResponse.status}`, 500);
+		return new Response(JSON.stringify({ error: `Google API Status Check Error: ${statusResponse.status}` }), {
+			status: 500,
+			headers: { 'Access-Control-Allow-Origin': '*' }
+		});
 	}
 
 	const statusData = await statusResponse.json();
-	return new CheckStatusResponse(statusData);
+	return new Response(JSON.stringify(new CheckStatusResponse(statusData)), {
+		headers: { 'Access-Control-Allow-Origin': '*' }
+	});
 });

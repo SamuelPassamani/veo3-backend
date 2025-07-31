@@ -10,20 +10,20 @@ O objetivo principal deste projeto é fornecer uma camada de API segura que abst
 
 ### ✨ Funcionalidades
 
--   **Endpoint Seguro para Geração:** Expõe uma rota (`/api/video/generate`) que recebe um prompt JSON e inicia uma tarefa de geração de vídeo.
--   **Autenticação Segura:** Utiliza um segredo do Cloudflare Worker para armazenar e usar as credenciais da conta de serviço do Google.
--   **Gerenciamento de Tarefas Assíncronas:** Inicia a tarefa de geração na Vertex AI e fornece uma rota (`/api/video/status/:operationName`) para verificar o status do trabalho de forma assíncrona.
--   **Estrutura Escalável:** Construído com um roteador (`itty-router-openapi`) para facilitar a adição de novos endpoints no futuro.
+- **Endpoint Seguro para Geração:** Expõe uma rota (`/api/video/generate`) que recebe um prompt JSON e inicia uma tarefa de geração de vídeo.
+- **Autenticação Segura:** Utiliza um segredo do Cloudflare Worker para armazenar e usar as credenciais da conta de serviço do Google.
+- **Gerenciamento de Tarefas Assíncronas:** Inicia a tarefa de geração na Vertex AI e fornece uma rota (`/api/video/status/:operationName`) para verificar o status do trabalho de forma assíncrona.
+- **Estrutura Escalável:** Construído com um roteador (`itty-router-openapi`) para facilitar a adição de novos endpoints no futuro.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
--   **Backend:** Cloudflare Workers
--   **Linguagem:** TypeScript
--   **Roteamento:** Itty Router OpenAPI
--   **Autenticação:** Google Auth Library
--   **API de IA:** Google Cloud Vertex AI (Modelo Veo 3)
+- **Backend:** Cloudflare Workers
+- **Linguagem:** TypeScript
+- **Roteamento:** Itty Router OpenAPI
+- **Autenticação:** Google Auth Library
+- **API de IA:** Google Cloud Vertex AI (Modelo Veo 3)
 
 ---
 
@@ -33,37 +33,42 @@ Siga os passos abaixo para configurar e implantar seu próprio backend.
 
 ### Pré-requisitos
 
--   Node.js e npm instalados.
--   Uma conta Cloudflare.
--   Um projeto no Google Cloud com a API Vertex AI ativada e uma chave de conta de serviço (arquivo JSON).
+- Node.js e npm instalados.
+- Uma conta Cloudflare.
+- Um projeto no Google Cloud com a API Vertex AI ativada e uma chave de conta de serviço (arquivo JSON).
 
 ### Guia de Instalação
 
-1.  **Clonar o Repositório:**
+1. **Clonar o Repositório:**
+
     ```bash
     git clone <URL_DO_SEU_REPOSITORIO>
     cd veo3-backend
     ```
 
-2.  **Instalar Dependências:**
+2. **Instalar Dependências:**
+
     ```bash
     npm install
     ```
 
-3.  **Configurar o Segredo do Google:**
+3. **Configurar o Segredo do Google:**
     Execute o comando abaixo, substituindo pelo caminho do seu arquivo de chave JSON. Se estiver usando PowerShell, consulte o guia para o comando correto.
+
     ```bash
     wrangler secret put GOOGLE_CREDENTIALS < /caminho/para/sua/chave.json
     ```
 
-4.  **Desenvolvimento Local:**
+4. **Desenvolvimento Local:**
     Inicie um servidor local para testes.
+
     ```bash
     npm run dev
     ```
 
-5.  **Implantação (Deploy):**
+5. **Implantação (Deploy):**
     Publique seu Worker na rede global da Cloudflare.
+
     ```bash
     npm run deploy
     ```
@@ -76,14 +81,14 @@ A URL base será a URL fornecida pelo seu Worker (ex: `https://veo3-backend.seu-
 
 ### Iniciar Geração de Vídeo
 
--   **Método:** `POST`
--   **Endpoint:** `/api/video/generate`
--   **Corpo (Body):** O prompt JSON completo para a API do Veo 3.
--   **Resposta de Sucesso:** Um objeto de "operação" da API do Google, contendo o `name` da tarefa.
+- **Método:** `POST`
+- **Endpoint:** `/api/video/generate`
+- **Corpo (Body):** O prompt JSON completo para a API do Veo 3.
+- **Resposta de Sucesso:** Um objeto de "operação" da API do Google, contendo o `name` da tarefa.
 
 ### Verificar Status da Geração
 
--   **Método:** `GET`
--   **Endpoint:** `/api/video/status/:operationName`
--   **Parâmetro de URL:** `:operationName` - O valor do campo `name` recebido da rota de geração.
--   **Resposta de Sucesso:** Um objeto de status. Se `done` for `true`, a resposta conterá a URL do vídeo gerado.
+- **Método:** `GET`
+- **Endpoint:** `/api/video/status/:operationName`
+- **Parâmetro de URL:** `:operationName` - O valor do campo `name` recebido da rota de geração.
+- **Resposta de Sucesso:** Um objeto de status. Se `done` for `true`, a resposta conterá a URL do vídeo gerado.

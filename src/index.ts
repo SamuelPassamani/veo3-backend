@@ -1,26 +1,19 @@
-import { fromHono } from "chanfana";
-import { Hono } from "hono";
-import { TaskCreate } from "./endpoints/taskCreate";
-import { TaskDelete } from "./endpoints/taskDelete";
-import { TaskFetch } from "./endpoints/taskFetch";
-import { TaskList } from "./endpoints/taskList";
+// src/index.ts
 
-// Start a Hono app
-const app = new Hono<{ Bindings: Env }>();
+import { OpenAPIRouter } from '@cloudflare/itty-router-openapi';
+import { videoRoutes } from './endpoints/video';
 
-// Setup OpenAPI registry
-const openapi = fromHono(app, {
-	docs_url: "/",
-});
+// Cria a instância principal do roteador
+export const router = OpenAPIRouter();
 
-// Register OpenAPI endpoints
-openapi.get("/api/tasks", TaskList);
-openapi.post("/api/tasks", TaskCreate);
-openapi.get("/api/tasks/:taskSlug", TaskFetch);
-openapi.delete("/api/tasks/:taskSlug", TaskDelete);
+// Registra todas as rotas definidas no arquivo de vídeo sob o prefixo /api/video
+router.all('/api/video/*', videoRoutes.handle);
 
-// You may also register routes for non OpenAPI directly on Hono
-// app.get('/test', (c) => c.text('Hono!'))
+// Rota para lidar com solicitações não encontradas (404)
+router.all('*', () => new Response('Not Found.', { status: 404 }));
 
-// Export the Hono app
-export default app;
+// O export default é o ponto de entrada do nosso Worker.
+// Ele simplesmente passa a requisição para o nosso roteador principal.
+export default {
+	fetch: router.handle,
+};

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@cloudflare/itty-router-openapi": "^1.1.1",
-    "google-auth-library": "^10.2.0"
+    "jose": "^6.0.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240725.0",

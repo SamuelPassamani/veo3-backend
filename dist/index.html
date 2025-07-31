@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Prompts para Veo 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #f9fafb; /* text-gray-50 */
+        }
+        .card {
+            background-color: #1f2937; /* bg-gray-800 */
+            border: 1px solid #374151; /* border-gray-700 */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .input-field {
+            background-color: #374151; /* bg-gray-700 */
+            border: 1px solid #4b5563; /* border-gray-600 */
+            color: #f9fafb; /* text-gray-50 */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.75rem 1rem; /* p-3 px-4 */
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6; /* focus:border-blue-500 */
+            box-shadow: 0 0 0 2px #1e40af; /* focus:ring-blue-500/50 */
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .btn-primary {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #1d4ed8; /* hover:bg-blue-700 */
+        }
+        .btn-secondary {
+            background-color: #4b5563; /* bg-gray-600 */
+            color: white;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #6b7280; /* hover:bg-gray-500 */
+        }
+        .btn-special {
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        .btn-special:hover:not(:disabled) {
+            filter: brightness(1.1);
+        }
+        .btn-success {
+            background-color: #16a34a; /* bg-green-600 */
+            color: white;
+        }
+        .btn-success:hover:not(:disabled) {
+            background-color: #15803d; /* hover:bg-green-700 */
+        }
+        .json-output {
+            background-color: #0f172a; /* bg-slate-900 */
+            color: #93c5fd; /* text-blue-300 */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid #374151;
+        }
+        .loader {
+            border: 4px solid #4b5563;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn .loader {
+            position: absolute;
+        }
+        #outputContainer video {
+            width: 100%;
+            border-radius: 0.5rem;
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl font-bold text-white tracking-tight">Gerador de Prompts para Veo 3</h1>
+            <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">Crie, refine e gere vídeos com um backend seguro e a API do Gemini.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Coluna de Inputs -->
+            <div class="flex flex-col gap-6">
+                <!-- NOVO: Campo para a Chave da API Gemini -->
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="key-round" class="mr-3 h-6 w-6 text-yellow-400"></i>Configuração da API Gemini</h2>
+                    <div>
+                        <label for="geminiApiKey" class="block mb-2 text-sm font-medium text-gray-300">Sua Chave da API Gemini (para tarefas de texto)</label>
+                        <input type="password" id="geminiApiKey" class="input-field" placeholder="Cole a sua chave da API aqui">
+                        <p class="text-xs text-gray-400 mt-2">Necessária para as funções 'Analisar' e 'Gerar Prévia (Texto)'. A sua chave é usada apenas no seu navegador e não é enviada para o nosso servidor.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="scan-text" class="mr-3 h-6 w-6 text-purple-400"></i>Comece com um Prompt Existente</h2>
+                    <div>
+                        <label for="unstructuredPrompt" class="block mb-2 text-sm font-medium text-gray-300">Cole sua ideia ou prompt aqui (em qualquer idioma)</label>
+                        <textarea id="unstructuredPrompt" class="input-field" rows="4" placeholder="Ex: um astronauta flutuando no espaço, olhando para a Terra. Ele diz: 'É magnífico.'"></textarea>
+                    </div>
+                    <button id="analyzeBtn" class="btn btn-special w-full mt-4">
+                        <span id="analyzeBtnText">Analisar e Preencher Campos (em Inglês)</span>
+                        <div id="analyzeLoader" class="loader hidden"></div>
+                    </button>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="camera" class="mr-3 h-6 w-6 text-blue-400"></i>Parâmetros da API (Nível 1)</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="model" class="block mb-2 text-sm font-medium text-gray-300">Modelo</label>
+                            <select id="model" class="input-field">
+                                <option value="veo-3.0-generate-001">Veo 3 (Qualidade)</option>
+                                <option value="veo-3.0-fast-generate-001">Veo 3 (Rápido)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="aspectRatio" class="block mb-2 text-sm font-medium text-gray-300">Proporção</label>
+                            <select id="aspectRatio" class="input-field">
+                                <option value="16:9">16:9 (Paisagem)</option>
+                                <option value="9:16">9:16 (Retrato)</option>
+                                <option value="1:1">1:1 (Quadrado)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="durationSeconds" class="block mb-2 text-sm font-medium text-gray-300">Duração (segundos)</label>
+                            <input type="number" id="durationSeconds" class="input-field" value="8" min="1" max="15">
+                        </div>
+                        <div>
+                            <label for="seed" class="block mb-2 text-sm font-medium text-gray-300">Seed (0 para aleatório)</label>
+                            <input type="number" id="seed" class="input-field" value="2024">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="clapperboard" class="mr-3 h-6 w-6 text-blue-400"></i>Cena e Estilo</h2>
+                    <div>
+                        <label for="composition" class="block mb-2 text-sm font-medium text-gray-300">Composição e Mov. de Câmera</label>
+                        <input type="text" id="composition" class="input-field" placeholder="Ex: Medium tracking shot, slow motion...">
+                    </div>
+                    <div class="mt-4">
+                        <label for="style" class="block mb-2 text-sm font-medium text-gray-300">Estilo Visual</label>
+                        <input type="text" id="style" class="input-field" placeholder="Ex: Cinematic, photorealistic, 35mm film, anime style">
+                    </div>
+                     <div class="mt-4">
+                        <label for="environment" class="block mb-2 text-sm font-medium text-gray-300">Ambiente</label>
+                        <input type="text" id="environment" class="input-field" placeholder="Ex: A busy Tokyo street at night, a misty forest at dawn">
+                    </div>
+                    <div class="mt-4">
+                        <label for="lighting_style" class="block mb-2 text-sm font-medium text-gray-300">Iluminação</label>
+                        <input type="text" id="lighting_style" class="input-field" placeholder="Ex: Soft, diffused lighting, golden hour, cool blue tones">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="user-round" class="mr-3 h-6 w-6 text-blue-400"></i>Sujeito e Diálogo</h2>
+                    <div>
+                        <label for="subject_description" class="block mb-2 text-sm font-medium text-gray-300">Descrição do Sujeito e Falas</label>
+                        <textarea id="subject_description" class="input-field" rows="3" placeholder="Ex: A tired detective, in his 40s. He says: 'Where were you last night?'"></textarea>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="volume-2" class="mr-3 h-6 w-6 text-blue-400"></i>Áudio</h2>
+                    <div>
+                        <label for="sfx" class="block mb-2 text-sm font-medium text-gray-300">Efeitos Sonoros (SFX)</label>
+                        <input type="text" id="sfx" class="input-field" placeholder="Ex: Footsteps on wet pavement, heavy rain, a creaking door">
+                    </div>
+                    <div class="mt-4">
+                        <label for="music" class="block mb-2 text-sm font-medium text-gray-300">Música</label>
+                        <input type="text" id="music" class="input-field" placeholder="Ex: A melancholic saxophone melody in the background">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center"><i data-lucide="ban" class="mr-3 h-6 w-6 text-red-400"></i>Regras (Prompt Negativo)</h2>
+                    <div>
+                        <label for="negative_prompt" class="block mb-2 text-sm font-medium text-gray-300">Evitar os seguintes elementos</label>
+                        <input type="text" id="negative_prompt" class="input-field" placeholder="Ex: on-screen text, watermarks, blur, deformed hands">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna de Saída -->
+            <div class="flex flex-col gap-6">
+                 <div class="sticky top-8 flex flex-col gap-6">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="generatePromptBtn" class="btn btn-secondary w-full">
+                            <span id="generatePromptBtnText"><i data-lucide="file-json-2" class="mr-2 h-5 w-5"></i>Gerar Prompt JSON</span>
+                            <div id="generatePromptLoader" class="loader hidden"></div>
+                        </button>
+                        <button id="generateVideoBtn" class="btn btn-primary w-full">
+                            <span id="generateVideoBtnText"><i data-lucide="wand-2" class="mr-2 h-5 w-5"></i>Gerar Prévia (Texto)</span>
+                            <div id="generateVideoLoader" class="loader hidden"></div>
+                        </button>
+                    </div>
+                     <button id="generateRealVideoBtn" class="btn btn-success w-full">
+                        <span id="generateRealVideoBtnText"><i data-lucide="film" class="mr-2 h-5 w-5"></i>Gerar Vídeo (Real)</span>
+                        <div id="generateRealVideoLoader" class="loader hidden"></div>
+                    </button>
+                    
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold">Prompt JSON Gerado</h2>
+                            <button id="copyBtn" class="btn btn-secondary !p-2" title="Copiar para a área de transferência">
+                                <i data-lucide="copy" class="h-5 w-5"></i>
+                            </button>
+                        </div>
+                        <pre id="jsonOutput" class="json-output text-sm">Clique em "Gerar Prompt JSON" para ver o resultado aqui.</pre>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="text-2xl font-semibold mb-4">Resultado da Geração</h2>
+                        <div id="outputContainer" class="bg-gray-900 rounded-lg min-h-[200px] text-gray-300 leading-relaxed flex items-center justify-center">
+                            <div id="outputPlaceholder">Selecione uma ação de geração acima.</div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- Elementos do DOM ---
+        const generatePromptBtn = document.getElementById('generatePromptBtn');
+        const generatePromptBtnText = document.getElementById('generatePromptBtnText');
+        const generatePromptLoader = document.getElementById('generatePromptLoader');
+        
+        const generateVideoBtn = document.getElementById('generateVideoBtn');
+        const generateVideoBtnText = document.getElementById('generateVideoBtnText');
+        const generateVideoLoader = document.getElementById('generateVideoLoader');
+
+        const generateRealVideoBtn = document.getElementById('generateRealVideoBtn');
+        const generateRealVideoBtnText = document.getElementById('generateRealVideoBtnText');
+        const generateRealVideoLoader = document.getElementById('generateRealVideoLoader');
+
+        const copyBtn = document.getElementById('copyBtn');
+        const jsonOutput = document.getElementById('jsonOutput');
+        
+        const outputContainer = document.getElementById('outputContainer');
+        const outputPlaceholder = document.getElementById('outputPlaceholder');
+        
+        const unstructuredPrompt = document.getElementById('unstructuredPrompt');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const analyzeBtnText = document.getElementById('analyzeBtnText');
+        const analyzeLoader = document.getElementById('analyzeLoader');
+
+        const inputs = {
+            model: document.getElementById('model'),
+            aspectRatio: document.getElementById('aspectRatio'),
+            durationSeconds: document.getElementById('durationSeconds'),
+            seed: document.getElementById('seed'),
+            composition: document.getElementById('composition'),
+            style: document.getElementById('style'),
+            environment: document.getElementById('environment'),
+            lighting_style: document.getElementById('lighting_style'),
+            subject_description: document.getElementById('subject_description'),
+            sfx: document.getElementById('sfx'),
+            music: document.getElementById('music'),
+            negative_prompt: document.getElementById('negative_prompt'),
+        };
+
+        let lastGeneratedJson = null;
+
+        // --- Funções ---
+
+        function getFormData() {
+            const data = {};
+            for (const key in inputs) {
+                data[key] = inputs[key].value;
+            }
+            return data;
+        }
+
+        function buildJsonPrompt(data) {
+            const promptTextObject = {
+                shot: {
+                    composition: data.composition || undefined,
+                    style: data.style || undefined,
+                },
+                subject: {
+                    description: data.subject_description || undefined,
+                },
+                scene: {
+                    environment: data.environment || undefined,
+                    lighting_style: data.lighting_style || undefined,
+                },
+                audio: {
+                    sfx: data.sfx ? `Audio: ${data.sfx}` : undefined,
+                    music: data.music ? `Audio: ${data.music}` : undefined,
+                },
+                rules: {
+                    negative_prompt: data.negative_prompt ? data.negative_prompt.split(',').map(s => s.trim()) : undefined,
+                }
+            };
+            
+            const clean = (obj) => {
+                Object.keys(obj).forEach(key => {
+                    if (obj[key] && typeof obj[key] === 'object') clean(obj[key]);
+                    else if (obj[key] === undefined || obj[key] === null || obj[key] === '') delete obj[key];
+                });
+                Object.keys(obj).forEach(key => {
+                    if (typeof obj[key] === 'object' && Object.keys(obj[key]).length === 0) delete obj[key];
+                });
+                return obj;
+            }
+
+            const finalPrompt = {
+                instances: [{
+                    prompt: {
+                        text: JSON.stringify(clean(promptTextObject), null, 2)
+                    }
+                }],
+                parameters: {
+                    model: data.model,
+                    durationSeconds: parseInt(data.durationSeconds, 10),
+                    aspectRatio: data.aspectRatio,
+                    generateAudio: !!(data.sfx || data.music || (data.subject_description && data.subject_description.includes(':'))),
+                    seed: parseInt(data.seed, 10) === 0 ? Math.floor(Math.random() * 4294967295) : parseInt(data.seed, 10),
+                    sampleCount: 1,
+                    personGeneration: "allow_adult"
+                }
+            };
+            return finalPrompt;
+        }
+        
+        async function handleGeneratePrompt() {
+            generatePromptBtnText.classList.add('hidden');
+            generatePromptLoader.classList.remove('hidden');
+            generatePromptBtn.disabled = true;
+
+            try {
+                const formData = getFormData();
+                const englishData = await translateDataToEnglish(formData);
+                populateFields(englishData);
+
+                const jsonPrompt = buildJsonPrompt(englishData);
+                lastGeneratedJson = JSON.stringify(jsonPrompt, null, 2);
+                jsonOutput.textContent = lastGeneratedJson;
+            } catch (error) {
+                console.error("Erro ao gerar prompt JSON:", error);
+                jsonOutput.textContent = `Error generating JSON prompt: ${error.message}`;
+            } finally {
+                generatePromptBtnText.classList.remove('hidden');
+                generatePromptLoader.classList.add('hidden');
+                generatePromptBtn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+        
+        function handleCopy() {
+            if (lastGeneratedJson) {
+                const textarea = document.createElement('textarea');
+                textarea.value = lastGeneratedJson;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    copyBtn.innerHTML = '<i data-lucide="check" class="h-5 w-5 text-green-400"></i>';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i data-lucide="copy" class="h-5 w-5"></i>';
+                        lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+                    }, 2000);
+                } catch (err) {
+                    console.error('Falha ao copiar texto: ', err);
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        async function handleGenerateVideoTextPreview() {
+            if (!lastGeneratedJson) {
+                await handleGeneratePrompt();
+            }
+            if (!lastGeneratedJson) {
+                outputContainer.innerHTML = `<div class="p-4">Please generate a JSON prompt first.</div>`;
+                return;
+            }
+
+            outputContainer.innerHTML = '';
+            outputPlaceholder.classList.add('hidden');
+            generateVideoBtnText.classList.add('hidden');
+            generateVideoLoader.classList.remove('hidden');
+            generateVideoBtn.disabled = true;
+
+            const userPrompt = `Based on the following technical JSON prompt for a video generator, describe the resulting video scene in vivid, cinematic detail, as if you were writing a script. Focus on atmosphere, movement, sound, and the overall emotion. Your entire response MUST be in English. The prompt is: ${lastGeneratedJson}`;
+            
+            try {
+                const text = await callGeminiApiForText(userPrompt);
+                outputContainer.innerHTML = `<div class="p-4">${text}</div>`;
+            } catch (error) {
+                console.error("Erro na API Gemini:", error);
+                outputContainer.innerHTML = `<div class="p-4 text-red-400">An error occurred while generating the preview. Details: ${error.message}. Please try again.</div>`;
+            } finally {
+                generateVideoBtnText.classList.remove('hidden');
+                generateVideoLoader.classList.add('hidden');
+                generateVideoBtn.disabled = false;
+            }
+        }
+
+        async function handleAnalyzeAndFill() {
+            const userText = unstructuredPrompt.value;
+            if (!userText.trim()) {
+                unstructuredPrompt.placeholder = "Por favor, insira uma ideia ou prompt primeiro.";
+                return;
+            }
+
+            analyzeBtnText.classList.add('hidden');
+            analyzeLoader.classList.remove('hidden');
+            analyzeBtn.disabled = true;
+
+            try {
+                const structuredData = await callGeminiToStructurePrompt(userText);
+                populateFields(structuredData);
+                await handleGeneratePrompt();
+            } catch (error) {
+                console.error("Erro ao analisar o prompt:", error);
+                unstructuredPrompt.value = `Error analyzing prompt: ${error.message}`;
+            } finally {
+                analyzeBtnText.classList.remove('hidden');
+                analyzeLoader.classList.add('hidden');
+                analyzeBtn.disabled = false;
+            }
+        }
+        
+        async function handleGenerateRealVideo() {
+            if (!lastGeneratedJson) {
+                await handleGeneratePrompt();
+            }
+            if (!lastGeneratedJson) {
+                outputContainer.innerHTML = `<div class="p-4">Por favor, gere um prompt JSON primeiro.</div>`;
+                return;
+            }
+
+            outputContainer.innerHTML = '';
+            outputPlaceholder.classList.add('hidden');
+            generateRealVideoBtnText.classList.add('hidden');
+            generateRealVideoLoader.classList.remove('hidden');
+            generateRealVideoBtn.disabled = true;
+
+            const workerUrl = 'https://veo3-backend.aserio.workers.dev';
+
+            const updateStatus = (message) => {
+                outputContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full p-4">
+                                            <div class="loader !w-10 !h-10 mb-4"></div>
+                                            <p class="text-gray-400">${message}</p>
+                                            </div>`;
+            };
+
+            try {
+                updateStatus("A enviar prompt para o backend...");
+                const generateResponse = await fetch(`${workerUrl}/api/video/generate`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: lastGeneratedJson,
+                });
+
+                if (!generateResponse.ok) {
+                    const err = await generateResponse.json();
+                    throw new Error(err.error || 'Falha ao iniciar a tarefa de geração.');
+                }
+
+                const operation = await generateResponse.json();
+                const operationName = operation.name;
+
+                updateStatus("Tarefa de geração iniciada. A verificar o estado...");
+
+                const pollStatus = async () => {
+                    const statusResponse = await fetch(`${workerUrl}/api/video/status/${operationName}`, {
+                        mode: 'cors',
+                    });
+                    if (!statusResponse.ok) {
+                        const err = await statusResponse.json();
+                        throw new Error(err.error || 'Falha ao verificar o estado.');
+                    }
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.done) {
+                        if (statusData.error) {
+                            throw new Error(`A geração falhou: ${statusData.error.message}`);
+                        }
+                        
+                        const videoUri = statusData.response?.videos?.[0]?.uri;
+                        if (!videoUri) {
+                            throw new Error('Geração concluída, mas nenhum URI de vídeo encontrado na resposta.');
+                        }
+
+                        updateStatus("Vídeo pronto! A carregar...");
+                        const videoElement = document.createElement('video');
+                        videoElement.src = videoUri;
+                        videoElement.controls = true;
+                        videoElement.autoplay = true;
+                        videoElement.loop = true;
+                        videoElement.muted = true;
+                        outputContainer.innerHTML = '';
+                        outputContainer.appendChild(videoElement);
+
+                        generateRealVideoBtnText.classList.remove('hidden');
+                        generateRealVideoLoader.classList.add('hidden');
+                        generateRealVideoBtn.disabled = false;
+
+                    } else {
+                        updateStatus("A processar o vídeo... A verificar novamente em 10 segundos.");
+                        setTimeout(pollStatus, 10000);
+                    }
+                };
+
+                setTimeout(pollStatus, 5000);
+
+            } catch (error) {
+                console.error("Error during video generation:", error);
+                let errorMessage = `<strong>Erro ao gerar o vídeo:</strong> ${error.message}.<br><br>
+                    Este é frequentemente um erro de rede ou de configuração. Causas comuns incluem:
+                    <ul class="list-disc list-inside mt-2">
+                        <li class='mt-2'><strong>Problema de CORS:</strong> O servidor do backend (<code>${workerUrl}</code>) pode não estar a permitir pedidos a partir desta página. Esta é a causa mais provável.</li>
+                        <li class='mt-2'><strong>Backend Offline:</strong> O servidor pode estar temporariamente indisponível.</li>
+                        <li class='mt-2'><strong>Problema de Rede:</strong> Verifique a sua ligação à internet.</li>
+                    </ul>
+                    <p class='mt-4'>Por favor, tente novamente mais tarde. Se o problema persistir, o backend pode necessitar de ajustes de configuração (CORS).</p>`;
+                outputContainer.innerHTML = `<div class="p-4 text-red-400 text-sm">${errorMessage}</div>`;
+                generateRealVideoBtnText.classList.remove('hidden');
+                generateRealVideoLoader.classList.add('hidden');
+                generateRealVideoBtn.disabled = false;
+            }
+        }
+
+
+        function populateFields(data) {
+            // FIX: Adiciona um limite de comprimento para evitar prompts excessivamente longos
+            // que podem causar erros de rede ou exceder os limites da API.
+            const maxLength = 2048; 
+            for (const key in data) {
+                if (inputs[key] && data[key]) {
+                    let value = data[key];
+                    if (typeof value === 'string' && value.length > maxLength) {
+                        console.warn(`A truncar o campo '${key}' de ${value.length} para ${maxLength} caracteres.`);
+                        value = value.substring(0, maxLength) + '...'; // Adiciona reticências para indicar que o texto foi cortado.
+                    }
+                    inputs[key].value = value;
+                }
+            }
+        }
+
+        function robustJsonParse(jsonString) {
+            let cleanString = jsonString.trim();
+            
+            if (cleanString.startsWith("```json")) {
+                cleanString = cleanString.substring(5).trim();
+            }
+            if (cleanString.startsWith("```")) {
+                cleanString = cleanString.substring(3).trim();
+            }
+            if (cleanString.endsWith("```")) {
+                cleanString = cleanString.slice(0, -3).trim();
+            }
+
+            const startIndex = cleanString.indexOf('{');
+            if (startIndex === -1) {
+                throw new Error("Nenhum objeto JSON válido foi encontrado na resposta da API.");
+            }
+
+            let braceCount = 0;
+            let endIndex = -1;
+            for (let i = startIndex; i < cleanString.length; i++) {
+                if (cleanString[i] === '{') {
+                    braceCount++;
+                } else if (cleanString[i] === '}') {
+                    braceCount--;
+                }
+                if (braceCount === 0) {
+                    endIndex = i + 1;
+                    break;
+                }
+            }
+
+            if (endIndex === -1) {
+                 throw new Error("A resposta da API continha um objeto JSON incompleto.");
+            }
+
+            const potentialJson = cleanString.substring(startIndex, endIndex);
+            
+            try {
+                return JSON.parse(potentialJson);
+            } catch (error) {
+                console.error("A análise robusta de JSON falhou. String original:", jsonString);
+                console.error("String limpa candidata:", potentialJson);
+                throw new Error(`Falha ao analisar JSON extraído: ${error.message}.`);
+            }
+        }
+
+        async function callGeminiToStructurePrompt(userText) {
+            const systemPrompt = `Analyze the following video prompt provided by the user. Your task is to extract the information and populate a JSON object based on the provided schema. Your entire output, including all string values in the resulting JSON, MUST be in English, WITH ONE CRITICAL EXCEPTION: any character dialogue or speech you identify (e.g., text in quotes or following a character name and colon) must be preserved in its original language. If the user's text is in another language (e.g., Portuguese), translate the concepts to English, but leave the dialogue untouched. Be concise. If information is not present, leave the field as an empty string. The user's text is: "${userText}"`;
+            
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    "composition": { "type": "STRING", "description": "Camera movement and framing. Ex: 'Medium tracking shot'." },
+                    "style": { "type": "STRING", "description": "Visual style. Ex: 'Cinematic, photorealistic'." },
+                    "environment": { "type": "STRING", "description": "The scene's location. Ex: 'A Tokyo street at night'." },
+                    "lighting_style": { "type": "STRING", "description": "The scene's lighting. Ex: 'Golden hour'." },
+                    "subject_description": { "type": "STRING", "description": "Description of the main subject, including any dialogue. Ex: 'An astronaut in a spacesuit. He says: \\'É magnífico.\\''" },
+                    "sfx": { "type": "STRING", "description": "Sound effects. Ex: 'Heavy breathing, radio static'." },
+                    "music": { "type": "STRING", "description": "Soundtrack. Ex: 'Epic orchestral music'." },
+                    "negative_prompt": { "type": "STRING", "description": "Items to avoid, comma-separated. Ex: 'blur, text'." }
+                }
+            };
+            
+            const responseJsonText = await callGeminiApi(systemPrompt, { responseMimeType: "application/json", responseSchema: schema });
+            return robustJsonParse(responseJsonText);
+        }
+
+        async function translateDataToEnglish(data) {
+            const translatableData = {};
+            const nonTranslatableKeys = ['model', 'aspectRatio', 'durationSeconds', 'seed'];
+            for (const key in data) {
+                if (!nonTranslatableKeys.includes(key) && data[key]) {
+                    translatableData[key] = data[key];
+                }
+            }
+            if (Object.keys(translatableData).length === 0) {
+                return data;
+            }
+
+            const systemPrompt = `Translate all string values in the following JSON object to English. Maintain the exact same JSON structure and keys. CRITICAL EXCEPTION: Do NOT translate any text that appears to be character dialogue or speech (e.g., text inside quotes or following 'says:'). Keep all dialogue in its original language. The JSON object is: ${JSON.stringify(translatableData)}`;
+            
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    "composition": { "type": "STRING" }, "style": { "type": "STRING" },
+                    "environment": { "type": "STRING" }, "lighting_style": { "type": "STRING" },
+                    "subject_description": { "type": "STRING" }, "sfx": { "type": "STRING" },
+                    "music": { "type": "STRING" }, "negative_prompt": { "type": "STRING" }
+                }
+            };
+
+            const translatedJsonText = await callGeminiApi(systemPrompt, { responseMimeType: "application/json", responseSchema: schema });
+            const translatedValues = robustJsonParse(translatedJsonText);
+            
+            return { ...data, ...translatedValues };
+        }
+
+        // --- Funções Genéricas da API ---
+
+        async function callGeminiApiForText(prompt) {
+            return callGeminiApi(prompt, {
+                temperature: 0.7,
+                topK: 1,
+                topP: 1,
+                maxOutputTokens: 8192,
+            });
+        }
+
+        async function callGeminiApi(prompt, generationConfig) {
+            const apiKeyInput = document.getElementById('geminiApiKey');
+            const apiKey = apiKeyInput.value;
+
+            if (!apiKey) {
+                throw new Error("Por favor, insira a sua chave da API Gemini no campo de configuração.");
+            }
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: generationConfig
+            };
+            
+            let retries = 3;
+            let delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        if (result.candidates?.[0]?.finishReason === 'SAFETY') {
+                           return "The generation was blocked for safety reasons. Please adjust your prompt.";
+                        }
+                        throw new Error("Invalid or empty API response.");
+                    }
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed. Retrying in ${delay / 1000}s...`);
+                    if (i < retries - 1) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        generatePromptBtn.addEventListener('click', handleGeneratePrompt);
+        copyBtn.addEventListener('click', handleCopy);
+        generateVideoBtn.addEventListener('click', handleGenerateVideoTextPreview);
+        analyzeBtn.addEventListener('click', handleAnalyzeAndFill);
+        generateRealVideoBtn.addEventListener('click', handleGenerateRealVideo);
+
+    </script>
+</body>
+</html>
